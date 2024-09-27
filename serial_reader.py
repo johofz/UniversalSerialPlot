@@ -1,12 +1,10 @@
 from PyQt5.QtCore import QThread, pyqtSignal
-import serial
-
-# Thread zum asynchronen Lesen der seriellen Daten
+import numpy as np
+import time
 
 
 class SerialReadThread(QThread):
-    # Signal, das Daten sendet, wenn sie gelesen werden
-    data_received = pyqtSignal(bytes)
+    data_received = pyqtSignal(bytes)  # Signal für empfangene Daten
 
     def __init__(self, serial_connection, dtype_func, parent=None):
         super().__init__(parent)
@@ -16,15 +14,29 @@ class SerialReadThread(QThread):
 
     def run(self):
         while self._is_running:
-            current_dtype = self.get_dtype()  # Den aktuellen dtype abrufen
-            read_size = current_dtype.itemsize  # Bestimme die Anzahl der zu lesenden Bytes
-            if self.serial_connection.in_waiting >= read_size:
-                # Lese die entsprechende Anzahl an Bytes
-                data = self.serial_connection.read(read_size)
-                # Sende die gelesenen Daten an die Hauptanwendung
-                self.data_received.emit(data)
+            # Simuliere das Erzeugen von Dummy-Daten, falls keine seriellen Daten empfangen werden
+            dummy_data = self.generate_dummy_data()
+            print(f"Erzeugte Dummy-Daten: {dummy_data}")
+            # Dummy-Daten als Signal senden
+            self.data_received.emit(dummy_data)
+            time.sleep(0.1)  # Simuliere eine kleine Wartezeit
 
     def stop(self):
         self._is_running = False
-        self.serial_connection.close()
+        if self.serial_connection.is_open:
+            self.serial_connection.close()
         self.quit()
+
+    def generate_dummy_data(self):
+        # Erzeuge Dummy-Daten entsprechend dem aktuellen dtype
+        dtype = self.get_dtype()
+        dummy_values = np.zeros(1, dtype=dtype)
+
+        # Beispieldaten zufällig generieren
+        for field in dtype.fields:
+            if np.issubdtype(dtype[field], np.integer):
+                dummy_values[field] = np.random.randint(0, 255)
+            else:
+                dummy_values[field] = np.random.uniform(0, 100)
+
+        return dummy_values.tobytes()

@@ -1,4 +1,3 @@
-from PyQt5.QtWidgets import QWidget
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
@@ -9,46 +8,47 @@ class MplCanvas(FigureCanvas):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
         super(MplCanvas, self).__init__(self.fig)
-        self.lines = {}  # Dictionary für Linien
-        self.buffer_size = 10000  # Speichertiefe auf 10.000 setzen
-        self.data_buffer = {}  # Speicher für die Daten
-        self.current_view_size = 1000  # Anzahl der Datenpunkte, die angezeigt werden
+        self.lines = {}  # Ein Dictionary, um die Linien zu speichern
+        self.buffer_size = 1000  # Buffer-Größe (basiert auf dem Ring-Buffer)
+        self.current_view_size = 100  # Standard-Anzeigebereich
 
     def init_plot(self, fields):
-        # Initialisiere den Plot für die ausgewählten Felder
-        self.axes.clear()
-        self.lines = {}
-        # Initialisiere Datenpuffer
+        """Initialisiert den Plot für die ausgewählten Felder."""
+        self.axes.clear()  # Löscht alle bestehenden Linien aus dem Plot
+        self.lines = {}  # Leert das Dictionary mit den Linien
+        # Daten-Puffer für die Felder
         self.data_buffer = {field: np.zeros(
             self.buffer_size) for field in fields}
 
-        # x-Achse mit der Speichertiefe
-        self.t = np.linspace(0, self.buffer_size - 1, self.buffer_size)
+        # X-Achse für die Zeit/Index (Umrechnung in Sekunden bei 10 Hz)
+        self.t = np.linspace(0, (self.buffer_size - 1) *
+                             0.1, self.buffer_size)  # 0.1 Sekunden pro Sample
+
         for field in fields:
-            line, = self.axes.plot(self.t[:self.current_view_size], np.zeros(
-                self.current_view_size), label=field)
-            self.lines[field] = line
+            # Initialisiere eine leere Linie für jedes Feld
+            line, = self.axes.plot([], [], label=field)
+            self.lines[field] = line  # Speichere die Linie im Dictionary
 
-        self.axes.legend()
+        self.axes.set_xlabel('Zeit (Sekunden)')  # Beschriftung der X-Achse
+        self.axes.legend()  # Zeige die Legende für die ausgewählten Felder an
         self.draw()
 
-    def update_plot(self, data):
-        # Aktualisiere den Puffer mit neuen Daten
+    def update_plot(self, data, current_size):
+        """Aktualisiert den Plot mit neuen Daten aus dem Ring-Buffer."""
+        display_size = min(
+            self.current_view_size, current_size)  # Stelle sicher, dass nur vorhandene Daten angezeigt werden
+        # Zeige die letzten `display_size` Daten an, X-Achse wird in Sekunden angezeigt
+        # 0.1 Sekunden pro Datenpunkt
+        time_in_seconds = np.arange(display_size) * 0.1
+
         for field, new_data in data.items():
-            self.data_buffer[field] = np.roll(
-                self.data_buffer[field], -len(new_data))  # Älteste Daten entfernen
-            # Neue Daten am Ende hinzufügen
-            self.data_buffer[field][-len(new_data):] = new_data
+            self.lines[field].set_ydata(new_data[-display_size:])
+            self.lines[field].set_xdata(time_in_seconds)
 
-        # Zeige nur die aktuelle View an, basierend auf dem Schieberegler
-        for field, line in self.lines.items():
-            line.set_ydata(self.data_buffer[field][-self.current_view_size:])
-            line.set_xdata(self.t[-self.current_view_size:])
-
-        self.draw()
+        self.axes.relim()  # Aktualisiere die Achsenbegrenzungen
+        self.axes.autoscale_view()  # Skalierung automatisch anpassen
+        self.draw()  # Aktualisiere den Plot
 
     def set_view_size(self, view_size):
-        # Setze die Anzahl der Datenpunkte, die angezeigt werden sollen
+        """Setze die aktuelle Anzahl der anzuzeigenden Datenpunkte basierend auf dem Slider-Wert."""
         self.current_view_size = view_size
-        # Plot mit dem neuen View-Bereich aktualisieren
-        self.update_plot(self.data_buffer)

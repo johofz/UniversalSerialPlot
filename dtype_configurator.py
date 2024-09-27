@@ -9,6 +9,9 @@ class DtypeConfigurator(QWidget):
 
         self.layout = QVBoxLayout()
 
+        # Standard-dtype beim Start setzen (kombinierter dtype von RxData_TypeDef und TxData_TypeDef)
+        self.dtype_fields = self.get_initial_dtype_fields()
+
         # Feldname und Typ auswählen
         self.fieldname_input = QLineEdit(self)
         self.fieldname_input.setPlaceholderText("Feldname")
@@ -35,10 +38,34 @@ class DtypeConfigurator(QWidget):
             ["Feldname", "Datentyp", "Plotten"])
         self.layout.addWidget(self.dtype_table)
 
-        # Container für dtype-Felder
-        self.dtype_fields = []
+        # Den initialen dtype in die Tabelle einfügen
+        self.update_dtype_table()
 
         self.setLayout(self.layout)
+
+    def get_initial_dtype_fields(self):
+        # Kombinierter dtype aus den Strukturen RxData_TypeDef und TxData_TypeDef
+        dtype_fields = [
+            # RxData_TypeDef Felder
+            ('SOC', 'uint8'),
+            ('battery_voltage_mV', 'uint16'),
+            ('battery_current_mA', 'int16'),
+            ('system_power_mW', 'uint16'),
+            ('dynamo_frequency_Hz', 'uint16'),
+            ('batteryState', 'uint8'),
+            ('lightState', 'uint8'),
+            ('error_rx', 'uint8'),  # Umbenannt, um Verwechslungen zu vermeiden
+            ('crc_rx', 'uint16'),
+
+            # TxData_TypeDef Felder
+            ('temperatureMCU_degC', 'int16'),
+            ('usbCurrent_mA', 'int16'),
+            ('usbVoltage_mV', 'uint16'),
+            ('userRequest', 'uint8'),
+            ('error_tx', 'uint8'),  # Umbenannt, um Verwechslungen zu vermeiden
+            ('crc_tx', 'uint16')
+        ]
+        return dtype_fields
 
     def apply_dtype(self):
         # Benutzerdefinierte dtype-Konfiguration sammeln
@@ -70,7 +97,6 @@ class DtypeConfigurator(QWidget):
     def get_dtype(self):
         # dtype basierend auf der Benutzerkonfiguration erstellen
         dtype = np.dtype(self.dtype_fields)
-        print(f"Dynamischer dtype erstellt: {dtype}")
         return dtype
 
     def get_plot_fields(self):

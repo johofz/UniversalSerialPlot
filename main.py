@@ -1,47 +1,49 @@
+# main.py
+
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QTabWidget, QWidget, QSlider
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QTabWidget, QWidget, QSlider, QLabel, QHBoxLayout
 from PyQt5.QtCore import Qt
 from serial_configurator import SerialConfigurator
 from dtype_configurator import DtypeConfigurator
 from mpl_canvas import MplCanvas
-
-# Hauptfenster der Anwendung
+# Importiere das Stylesheet aus dark_theme.py
+from dark_theme import get_dark_theme
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        # Hauptlayout und Tabs
+        # Wende das Dark-Theme-Stylesheet an
+        self.setStyleSheet(get_dark_theme())
+
+        # Layout und Tabs
+        self.setup_ui()
+
+    def setup_ui(self):
         self.tabs = QTabWidget()
         self.main_layout = QVBoxLayout()
 
-        # Tab für den Live-Plot
         self.data_tab = QWidget()
         self.init_data_tab()
 
-        # Tab für den Dtype-Konfigurator
         self.config_tab = QWidget()
         self.dtype_configurator = DtypeConfigurator()
         self.init_config_tab()
 
-        # Tab für die serielle Konfiguration
         self.serial_config_tab = QWidget()
         self.serial_configurator = SerialConfigurator(self)
         self.init_serial_config_tab()
 
-        # Tabs zum Hauptlayout hinzufügen
         self.tabs.addTab(self.data_tab, "Live-Plot")
         self.tabs.addTab(self.config_tab, "Dtype Konfigurator")
         self.tabs.addTab(self.serial_config_tab, "Serielle Konfiguration")
 
-        # Zentrales Widget setzen
         self.central_widget = QWidget()
         self.central_widget.setLayout(self.main_layout)
         self.main_layout.addWidget(self.tabs)
         self.setCentralWidget(self.central_widget)
 
-        # Fensterkonfiguration
         self.setWindowTitle('Live-Plot und Konfiguration')
         self.setGeometry(100, 100, 800, 600)
 
@@ -52,15 +54,28 @@ class MainWindow(QMainWindow):
         self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
         layout.addWidget(self.canvas)
 
-        # Schieberegler hinzufügen
+        # Horizontal Layout für Slider und Label
+        slider_layout = QHBoxLayout()
+
+        # Slider hinzufügen
         self.slider = QSlider(Qt.Horizontal)
-        self.slider.setMinimum(100)  # Minimum 100 Werte anzeigen
-        self.slider.setMaximum(10000)  # Maximum 10.000 Werte
-        self.slider.setValue(1000)  # Standardwert auf 1000
-        self.slider.setTickInterval(100)
+        self.slider.setMinimum(10)
+        self.slider.setMaximum(1000)
+        self.slider.setValue(100)
+        self.slider.setTickInterval(10)
         self.slider.setTickPosition(QSlider.TicksBelow)
         self.slider.valueChanged.connect(self.update_view_size)
-        layout.addWidget(self.slider)
+        slider_layout.addWidget(self.slider)
+
+        # Label zum Anzeigen des Slider-Werts (begrenzte Höhe)
+        self.slider_label = QLabel(
+            f"Datenpunkte: {self.slider.value()}", self)
+        self.slider_label.setStyleSheet("font-size: 15px;")  # Kleinere Schrift
+        self.slider_label.setFixedHeight(20)  # Höhe auf 20px festlegen
+        slider_layout.addWidget(self.slider_label)
+
+        # Füge das horizontal Layout dem Hauptlayout hinzu
+        layout.addLayout(slider_layout)
 
         self.data_tab.setLayout(layout)
 
@@ -75,12 +90,11 @@ class MainWindow(QMainWindow):
         self.serial_config_tab.setLayout(layout)
 
     def update_view_size(self):
-        # Aktualisiere die Anzahl der anzuzeigenden Datenpunkte basierend auf dem Schieberegler
         view_size = self.slider.value()
         self.canvas.set_view_size(view_size)
+        self.slider_label.setText(f"Datenpunkte: {view_size}")
 
 
-# Hauptprogramm
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow()

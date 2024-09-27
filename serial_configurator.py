@@ -1,7 +1,9 @@
 import serial.tools.list_ports
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QComboBox, QPushButton, QLabel
 from serial_reader import SerialReadThread
+import serial
 import numpy as np
+from ring_buffer import RingBuffer
 
 
 class SerialConfigurator(QWidget):
@@ -12,6 +14,10 @@ class SerialConfigurator(QWidget):
         self.parent_window = parent
 
         self.layout = QVBoxLayout()
+
+        # Ring-Buffer mit einer Kapazität von 10.000 Werten initialisieren
+        self.ring_buffer = RingBuffer(
+            size=10000, dtype=self.parent_window.dtype_configurator.get_dtype())
 
         # Auswahl für den seriellen Port
         self.port_selector = QComboBox(self)
@@ -35,6 +41,11 @@ class SerialConfigurator(QWidget):
         self.connect_button = QPushButton("Verbinden", self)
         self.connect_button.clicked.connect(self.connect_to_serial_port)
         self.layout.addWidget(self.connect_button)
+
+        # Button zum Trennen der Verbindung
+        self.disconnect_button = QPushButton("Verbindung trennen", self)
+        self.disconnect_button.clicked.connect(self.close_serial_connection)
+        self.layout.addWidget(self.disconnect_button)
 
         self.setLayout(self.layout)
 
@@ -64,43 +75,42 @@ class SerialConfigurator(QWidget):
             print(f"Fehler bei der Verbindung: {e}")
 
     def handle_serial_data(self, data):
-        # Verarbeite die empfangenen seriellen Daten
-        print(f"Empfangene serielle Daten: {data}")
+        # Speichern der Daten im Ring-Buffer
+        dtype = self.parent_window.dtype_configurator.get_dtype()
+        decoded_data = np.frombuffer(data, dtype=dtype)
+        print(f"Empfangene serielle Daten: {decoded_data}")
 
-        try:
-            dtype = self.parent_window.dtype_configurator.get_dtype()
-            expected_size = dtype.itemsize
+        # Jedes empfangene Datenpaket in den Ring-Buffer speichern
+        self.ring_buffer.append(decoded_data)
 
-            if len(data) != expected_size:
-                raise ValueError(
-                    f"Ungültige Datenlänge: Erwartet {expected_size} Bytes, aber {len(data)} Bytes erhalten.")
+        # Optional: Die gesamten Daten aus dem Ring-Buffer abrufen
+        buffer_data = self.ring_buffer.get()
 
-            # Dekodiere die Daten
-            decoded_data = np.frombuffer(data, dtype=dtype)
-            print(f"Decodierte Daten: {decoded_data}")
+        # Ermitteln, welche Felder geplottet werden sollen
+        plot_fields = self.parent_window.dtype_configurator.get_plot_fields()
+        print(f"Felder zum Plotten: {plot_fields}")
 
-            # Ermitteln, welche Felder geplottet werden sollen
-            plot_fields = self.parent_window.dtype_configurator.get_plot_fields()
-            print(f"Felder zum Plotten: {plot_fields}")
+        # Plot initialisieren, wenn sich die ausgewählten Felder ändern
+        self.parent_window.canvas.init_plot(plot_fields)
 
-            # Plot initialisieren, wenn sich die ausgewählten Felder ändern
-            self.parent_window.canvas.init_plot(plot_fields)
+        # Die tatsächliche Anzahl der Daten im Ring-Buffer bestimmen
+        current_size = len(buffer_data)
 
-            # Neue Daten für die zu plottenden Felder sammeln
-            plot_data = {field: decoded_data[field] for field in plot_fields}
+        # Neue Daten für die zu plottenden Felder sammeln
+        plot_data = {field: buffer_data[field].flatten()
+                     for field in plot_fields}
 
-            # Aktualisiere den Plot mit den neuen Daten
-            self.parent_window.canvas.update_plot(plot_data)
-
-        except ValueError as ve:
-            print(f"Fehler beim Verarbeiten der seriellen Daten: {ve}")
-        except TypeError as te:
-            print(f"Fehler beim Dekodieren der Daten mit np.frombuffer: {te}")
-        except Exception as e:
-            print(f"Allgemeiner Fehler: {e}")
+        # Aktualisiere den Plot mit den neuen Daten
+        self.parent_window.canvas.update_plot(plot_data, current_size)
 
     def close_serial_connection(self):
+        # Schließe die serielle Verbindung und stoppe den Thread
         if self.serial_thread is not None:
             self.serial_thread.stop()
             self.serial_thread = None
+
+        if self.serial_connection is not None and self.serial_connection.is_open:
+            self.serial_connection.close()
+            self.serial_connection = None
+
         print("Serielle Verbindung geschlossen.")
