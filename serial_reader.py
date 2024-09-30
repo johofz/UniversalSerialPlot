@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QThread, pyqtSignal
+import serial
 import numpy as np
-import time
 
 
 class SerialReadThread(QThread):
@@ -14,29 +14,24 @@ class SerialReadThread(QThread):
 
     def run(self):
         while self._is_running:
-            # Simuliere das Erzeugen von Dummy-Daten, falls keine seriellen Daten empfangen werden
-            dummy_data = self.generate_dummy_data()
-            print(f"Erzeugte Dummy-Daten: {dummy_data}")
-            # Dummy-Daten als Signal senden
-            self.data_received.emit(dummy_data)
-            time.sleep(0.1)  # Simuliere eine kleine Wartezeit
+            try:
+                # Hole den aktuellen dtype
+                dtype = self.get_dtype()
+                bytes_to_read = dtype.itemsize  # Anzahl der zu lesenden Bytes basierend auf dtype
+
+                # Echte Daten von der seriellen Verbindung lesen
+                data = self.serial_connection.read(bytes_to_read)
+
+                if len(data) == bytes_to_read:
+                    # Signal senden, wenn alle Bytes empfangen wurden
+                    self.data_received.emit(data)
+
+            except serial.SerialException as e:
+                print(f"Fehler beim Lesen der seriellen Daten: {e}")
+                self._is_running = False  # Stoppe den Thread bei einem Fehler
 
     def stop(self):
         self._is_running = False
         if self.serial_connection.is_open:
             self.serial_connection.close()
         self.quit()
-
-    def generate_dummy_data(self):
-        # Erzeuge Dummy-Daten entsprechend dem aktuellen dtype
-        dtype = self.get_dtype()
-        dummy_values = np.zeros(1, dtype=dtype)
-
-        # Beispieldaten zufällig generieren
-        for field in dtype.fields:
-            if np.issubdtype(dtype[field], np.integer):
-                dummy_values[field] = np.random.randint(0, 255)
-            else:
-                dummy_values[field] = np.random.uniform(0, 100)
-
-        return dummy_values.tobytes()

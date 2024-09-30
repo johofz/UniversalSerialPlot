@@ -98,10 +98,11 @@ class SerialConfigurator(QWidget):
 
         # Neue Daten für die zu plottenden Felder sammeln
         plot_data = {field: buffer_data[field].flatten()
-                     for field in plot_fields}
+                    for field in plot_fields}
 
         # Aktualisiere den Plot mit den neuen Daten
         self.parent_window.canvas.update_plot(plot_data, current_size)
+
 
     def close_serial_connection(self):
         # Schließe die serielle Verbindung und stoppe den Thread
