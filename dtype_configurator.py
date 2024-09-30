@@ -46,7 +46,15 @@ class DtypeConfigurator(QWidget):
     def get_initial_dtype_fields(self):
         # Kombinierter dtype aus den Strukturen RxData_TypeDef und TxData_TypeDef
         dtype_fields = [
-            # RxData_TypeDef Felder
+            # Schalter Felder
+            ('temperatureMCU_degC', 'int16'),
+            ('usbCurrent_mA', 'int16'),
+            ('usbVoltage_mV', 'uint16'),
+            ('userRequest', 'uint8'),
+            ('error_tx', 'uint8'),  # Umbenannt, um Verwechslungen zu vermeiden
+            ('crc_tx', 'uint16'),
+            
+            # Scheinwerfer Felder
             ('SOC', 'uint8'),
             ('battery_voltage_mV', 'uint16'),
             ('battery_current_mA', 'int16'),
@@ -55,15 +63,7 @@ class DtypeConfigurator(QWidget):
             ('batteryState', 'uint8'),
             ('lightState', 'uint8'),
             ('error_rx', 'uint8'),  # Umbenannt, um Verwechslungen zu vermeiden
-            ('crc_rx', 'uint16'),
-
-            # TxData_TypeDef Felder
-            ('temperatureMCU_degC', 'int16'),
-            ('usbCurrent_mA', 'int16'),
-            ('usbVoltage_mV', 'uint16'),
-            ('userRequest', 'uint8'),
-            ('error_tx', 'uint8'),  # Umbenannt, um Verwechslungen zu vermeiden
-            ('crc_tx', 'uint16')
+            ('crc_rx', 'uint16')
         ]
         return dtype_fields
 

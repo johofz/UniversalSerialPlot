@@ -78,7 +78,7 @@ class SerialConfigurator(QWidget):
         # Speichern der Daten im Ring-Buffer
         dtype = self.parent_window.dtype_configurator.get_dtype()
         decoded_data = np.frombuffer(data, dtype=dtype)
-        print(f"Empfangene serielle Daten: {decoded_data}")
+        # print(f"Empfangene serielle Daten: {decoded_data}")
 
         # Jedes empfangene Datenpaket in den Ring-Buffer speichern
         self.ring_buffer.append(decoded_data)
@@ -88,7 +88,7 @@ class SerialConfigurator(QWidget):
 
         # Ermitteln, welche Felder geplottet werden sollen
         plot_fields = self.parent_window.dtype_configurator.get_plot_fields()
-        print(f"Felder zum Plotten: {plot_fields}")
+        # print(f"Felder zum Plotten: {plot_fields}")
 
         # Plot initialisieren, wenn sich die ausgewählten Felder ändern
         self.parent_window.canvas.init_plot(plot_fields)
