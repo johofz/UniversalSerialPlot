@@ -63,7 +63,7 @@ class SerialConfigurator(QWidget):
 
         try:
             self.serial_connection = serial.Serial(port, baudrate, timeout=1)
-            print(f"Verbunden mit {port} bei {baudrate} Baud.")
+            # print(f"Verbunden mit {port} bei {baudrate} Baud.")
 
             # Starte den Thread zum Lesen der Daten
             self.serial_thread = SerialReadThread(
@@ -113,4 +113,4 @@ class SerialConfigurator(QWidget):
             self.serial_connection.close()
             self.serial_connection = None
 
-        print("Serielle Verbindung geschlossen.")
+        # print("Serielle Verbindung geschlossen.")

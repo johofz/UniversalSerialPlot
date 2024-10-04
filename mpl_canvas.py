@@ -38,7 +38,7 @@ class MplCanvas(FigureCanvas):
         # 0.1 Sekunden pro Datenpunkt
         time_in_seconds = np.arange(display_size) * 0.1
 
-        print(data.items())
+        # print(data.items())
 
         for field, new_data in data.items():
             self.lines[field].set_ydata(new_data[-display_size:])

@@ -127,7 +127,7 @@ class MainWindow(QMainWindow):
         # Verarbeite die empfangenen BLE-Daten (z.B. CRC-Validierung, Plotten)
         dtype = self.dtype_configurator.get_dtype()
         decoded_data = np.frombuffer(data, dtype=dtype)
-        print(decoded_data)
+        # print(decoded_data)
 
         # Die dekodierten Daten können jetzt in den Plot integriert werden
         self.ring_buffer.append(decoded_data)
@@ -140,8 +140,8 @@ class MainWindow(QMainWindow):
 
         # Ermitteln, welche Felder geplottet werden sollen
         plot_fields = self.dtype_configurator.get_plot_fields()
-        print(f"Felder zum Plotten: {plot_fields}")
-        print(f"Verfügbare Datenfelder: {buffer_data.dtype.names}")
+        # print(f"Felder zum Plotten: {plot_fields}")
+        # print(f"Verfügbare Datenfelder: {buffer_data.dtype.names}")
 
         # Plot initialisieren, wenn sich die ausgewählten Felder ändern
         self.canvas.init_plot(plot_fields)
