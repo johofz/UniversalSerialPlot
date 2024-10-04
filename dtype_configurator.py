@@ -49,11 +49,11 @@ class DtypeConfigurator(QWidget):
             # Schalter Felder
             ('temperatureMCU_degC', 'int16'),
             ('usbCurrent_mA', 'int16'),
-            ('usbVoltage_mV', 'uint16'),
+            ('ldcValue', 'int16'),
             ('userRequest', 'uint8'),
             ('error_tx', 'uint8'),  # Umbenannt, um Verwechslungen zu vermeiden
             ('crc_tx', 'uint16'),
-            
+
             # Scheinwerfer Felder
             ('SOC', 'uint8'),
             ('battery_voltage_mV', 'uint16'),

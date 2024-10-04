@@ -16,20 +16,17 @@ class MplCanvas(FigureCanvas):
         """Initialisiert den Plot für die ausgewählten Felder."""
         self.axes.clear()  # Löscht alle bestehenden Linien aus dem Plot
         self.lines = {}  # Leert das Dictionary mit den Linien
-        # Daten-Puffer für die Felder
-        self.data_buffer = {field: np.zeros(
-            self.buffer_size) for field in fields}
 
-        # X-Achse für die Zeit/Index (Umrechnung in Sekunden bei 10 Hz)
-        self.t = np.linspace(0, (self.buffer_size - 1) *
-                             0.1, self.buffer_size)  # 0.1 Sekunden pro Sample
+        # X-Achse für die Zeit/Index
+        self.t = np.linspace(0, self.buffer_size - 1, self.buffer_size)
 
+        # Initialisiere eine leere Linie für jedes Feld
         for field in fields:
-            # Initialisiere eine leere Linie für jedes Feld
-            line, = self.axes.plot([], [], label=field)
-            self.lines[field] = line  # Speichere die Linie im Dictionary
+            # Initialisiere die Linie nur, wenn sie noch nicht existiert
+            if field not in self.lines:
+                line, = self.axes.plot([], [], label=field)
+                self.lines[field] = line  # Speichere die Linie im Dictionary
 
-        self.axes.set_xlabel('Zeit (Sekunden)')  # Beschriftung der X-Achse
         self.axes.legend()  # Zeige die Legende für die ausgewählten Felder an
         self.draw()
 
@@ -40,6 +37,8 @@ class MplCanvas(FigureCanvas):
         # Zeige die letzten `display_size` Daten an, X-Achse wird in Sekunden angezeigt
         # 0.1 Sekunden pro Datenpunkt
         time_in_seconds = np.arange(display_size) * 0.1
+
+        print(data.items())
 
         for field, new_data in data.items():
             self.lines[field].set_ydata(new_data[-display_size:])
