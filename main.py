@@ -8,6 +8,10 @@ from dtype_configurator import DtypeConfigurator
 from mpl_canvas import MplCanvas
 # Importiere das Stylesheet aus dark_theme.py
 from dark_theme import get_dark_theme
+from ble_configurator import BLEConfigurator
+from ble_thread import BLEThread
+import numpy as np
+from ring_buffer import RingBuffer
 
 
 class MainWindow(QMainWindow):
@@ -35,9 +39,16 @@ class MainWindow(QMainWindow):
         self.serial_configurator = SerialConfigurator(self)
         self.init_serial_config_tab()
 
+        self.ble_tab = QWidget()
+        self.ble_configurator = BLEConfigurator()
+        self.ble_configurator.ble_device_selected.connect(
+            self.start_ble_thread)
+        self.init_ble_tab()
+
         self.tabs.addTab(self.data_tab, "Live-Plot")
         self.tabs.addTab(self.config_tab, "Dtype Konfigurator")
         self.tabs.addTab(self.serial_config_tab, "Serielle Konfiguration")
+        self.tabs.addTab(self.ble_tab, "BLE Konfiguration")
 
         self.central_widget = QWidget()
         self.central_widget.setLayout(self.main_layout)
@@ -46,6 +57,10 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle('Live-Plot und Konfiguration')
         self.setGeometry(100, 100, 800, 600)
+
+        # Initialisiere den Ring-Buffer
+        self.ring_buffer = RingBuffer(
+            size=1000, dtype=self.dtype_configurator.get_dtype())
 
     def init_data_tab(self):
         layout = QVBoxLayout()
@@ -93,6 +108,58 @@ class MainWindow(QMainWindow):
         view_size = self.slider.value()
         self.canvas.set_view_size(view_size)
         self.slider_label.setText(f"Datenpunkte: {view_size}")
+
+    def init_ble_tab(self):
+        layout = QVBoxLayout()
+        layout.addWidget(self.ble_configurator)
+        self.ble_tab.setLayout(layout)
+
+    def start_ble_thread(self, address, uuid):
+        # Startet den BLE-Thread für die Verbindung
+        self.ble_thread = BLEThread(address, uuid)
+        self.ble_thread.data_received.connect(self.handle_ble_data)
+        self.ble_thread.start()
+
+    def handle_ble_data(self, data):
+        # Hier landen die Daten, die über BLE empfangen wurden
+        # print(f"Empfangene BLE-Daten: {data}")
+
+        # Verarbeite die empfangenen BLE-Daten (z.B. CRC-Validierung, Plotten)
+        dtype = self.dtype_configurator.get_dtype()
+        decoded_data = np.frombuffer(data, dtype=dtype)
+        # print(decoded_data)
+
+        # Die dekodierten Daten können jetzt in den Plot integriert werden
+        self.ring_buffer.append(decoded_data)
+        self.update_plot()
+
+    def update_plot(self):
+        """Aktualisiert den Plot mit den Daten aus dem Ring-Buffer."""
+        # Hole die Daten aus dem Ring-Buffer
+        buffer_data = self.ring_buffer.get()
+
+        # Ermitteln, welche Felder geplottet werden sollen
+        plot_fields = self.dtype_configurator.get_plot_fields()
+        # print(f"Felder zum Plotten: {plot_fields}")
+        # print(f"Verfügbare Datenfelder: {buffer_data.dtype.names}")
+
+        # Plot initialisieren, wenn sich die ausgewählten Felder ändern
+        self.canvas.init_plot(plot_fields)
+
+        # Neue Daten für die zu plottenden Felder sammeln
+        plot_data = {}
+        for field in plot_fields:
+            if field in buffer_data.dtype.names:
+                plot_data[field] = buffer_data[field].flatten()
+            else:
+                print(
+                    f"Warnung: Feld '{field}' nicht in den empfangenen Daten gefunden.")
+
+        # Bestimme die aktuelle Größe der Daten im Buffer
+        current_size = len(buffer_data)
+
+        # Aktualisiere den Plot mit den neuen Daten
+        self.canvas.update_plot(plot_data, current_size)
 
 
 if __name__ == '__main__':

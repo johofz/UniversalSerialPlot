@@ -4,7 +4,7 @@ Ladelux_dtype = np.dtype([
     # Schalter Felder
     ('temperatureMCU_degC', 'int16'),
     ('usbCurrent_mA', 'int16'),
-    ('usbVoltage_mV', 'uint16'),
+    ('ldcValue', 'int16'),
     ('userRequest', 'uint8'),
     ('error_tx', 'uint8'),  # Umbenannt, um Verwechslungen zu vermeiden
     ('crc_tx', 'uint16'),

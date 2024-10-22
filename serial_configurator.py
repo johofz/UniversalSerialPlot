@@ -63,7 +63,7 @@ class SerialConfigurator(QWidget):
 
         try:
             self.serial_connection = serial.Serial(port, baudrate, timeout=1)
-            print(f"Verbunden mit {port} bei {baudrate} Baud.")
+            # print(f"Verbunden mit {port} bei {baudrate} Baud.")
 
             # Starte den Thread zum Lesen der Daten
             self.serial_thread = SerialReadThread(
@@ -98,11 +98,10 @@ class SerialConfigurator(QWidget):
 
         # Neue Daten für die zu plottenden Felder sammeln
         plot_data = {field: buffer_data[field].flatten()
-                    for field in plot_fields}
+                     for field in plot_fields}
 
         # Aktualisiere den Plot mit den neuen Daten
         self.parent_window.canvas.update_plot(plot_data, current_size)
-
 
     def close_serial_connection(self):
         # Schließe die serielle Verbindung und stoppe den Thread
@@ -114,4 +113,4 @@ class SerialConfigurator(QWidget):
             self.serial_connection.close()
             self.serial_connection = None
 
-        print("Serielle Verbindung geschlossen.")
+        # print("Serielle Verbindung geschlossen.")

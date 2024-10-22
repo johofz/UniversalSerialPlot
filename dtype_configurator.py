@@ -53,7 +53,7 @@ class DtypeConfigurator(QWidget):
             ('userRequest', 'uint8'),
             ('error_tx', 'uint8'),  # Umbenannt, um Verwechslungen zu vermeiden
             ('crc_tx', 'uint16'),
-            
+
             # Scheinwerfer Felder
             ('SOC', 'uint8'),
             ('battery_voltage_mV', 'uint16'),

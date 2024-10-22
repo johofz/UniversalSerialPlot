@@ -27,7 +27,7 @@ class SerialReadThread(QThread):
                     self.data_received.emit(data)
 
             except serial.SerialException as e:
-                print(f"Fehler beim Lesen der seriellen Daten: {e}")
+                # print(f"Fehler beim Lesen der seriellen Daten: {e}")
                 self._is_running = False  # Stoppe den Thread bei einem Fehler
 
     def stop(self):
